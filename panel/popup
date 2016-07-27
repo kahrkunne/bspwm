@@ -1,0 +1,38 @@
+#!/usr/bin/bash
+. panel_colors
+outnums=1
+down=18
+while read -r line ; do
+    case $line in
+        N*)
+            name=${line#?}
+            ;;
+        X*)
+            x=${line#?}
+            ;;
+        R*)
+            right=${line#?}
+            ;;
+        O*)
+            out[outnums]="${line#?}"
+            ((outnums++))
+            ;;
+    esac
+done
+
+for i in "${out[@]}"; do
+    (echo "$i"; sleep infinity) | exec -a $name lemonbar\
+                                -g "${x}x18+${right}+${down}"\
+                                -f "Terminus:pixelsize=14:style=ja"\
+                                -f "IPAGothic"\
+                                -f "fontawesome:size=10:antialias=True"\
+                                -f "icomoon:size=10:antialias=True"\
+                                -o -1\
+                                -u 1\
+                                -B "${COLOR_BACKGROUND}"\
+                                -F "${COLOR_FOREGROUND}"\
+                                | clickable &
+    ((down+=18))
+done
+sleep 5 && killall popup &
+exit

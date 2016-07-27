@@ -1,0 +1,11 @@
+location=$(xdotool getmouselocation)
+r=$(echo $location | cut -d ':' -f2 | cut -d ' ' -f1)
+rtemp=$(($r - ($x / 2)))
+if [[ ${1:0:1} == 'R' ]]; then
+    oldx="$2"
+    correction="$((($oldx - $x) / 2))"
+    rfinal=$((${1#?} + $correction)) 
+    notify-send "$correction"
+else
+    rfinal=$rtemp
+fi

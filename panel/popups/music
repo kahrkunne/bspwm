@@ -1,0 +1,29 @@
+#!/usr/bin/bash
+helpers=".config/bspwm/panel/popups/helpers"
+. panel_colors
+x=128
+oldx=$(cat /tmp/musicpopupoldx)
+echo $x > /tmp/musicpopupoldx
+location=$(xdotool getmouselocation)
+title=$(mpc current -f %title%)
+artist=$(mpc current -f %artist%)
+album=$(mpc current -f %album%)
+
+lens="${#title} ${#artist} ${#album}"
+highlen=$(echo $lens | sed s/' '/'\n'/g | sort -n | tail -n 1)
+if [[ $highlen -gt 15 ]]; then
+    x=$(($highlen * 8 + 8))
+fi
+echo $x > /tmp/musicpopupoldx
+
+. "$helpers/genright"
+. "$helpers/icons"
+. "$helpers/buttons"
+
+echo "Npopupmusic"
+echo "X$x"
+echo "R$rfinal"
+echo "O%{c}%{F$COLOR_BLUE}$title%{F-}"
+echo "O%{c}%{F$COLOR_RED}$artist%{F-}"
+echo "O%{c}%{F$COLOR_YELLOW}$album%{F-}"
+echo "O%{c}$prev $v_down $rew $toggle $v_up $next"

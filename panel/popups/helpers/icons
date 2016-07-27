@@ -1,0 +1,14 @@
+play_icon=$(echo -e "\uf04b")
+pause_icon=$(echo -e "\uf04c")
+mpdstatus="$(/home/kahr/Scripts/getmpdstatus)"
+toggle_icon=${mpdstatus::1}
+if [[ $toggle_icon == $play_icon ]]; then
+    toggle_icon=$pause_icon
+else
+    toggle_icon=$play_icon
+fi
+prev_icon=$(echo -e "\uf051")
+next_icon=$(echo -e "\uf048")
+rew_icon=$(echo -e "\uf021")
+v_up_icon=$(echo -e "\uf028")
+v_down_icon=$(echo -e "\uf027")

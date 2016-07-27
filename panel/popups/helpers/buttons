@@ -1,0 +1,6 @@
+toggle="%{F$COLOR_ICON}%{A:MTp$rfinal:}$toggle_icon%{A}%{F-}"
+prev="%{F$COLOR_ICON}%{A:MB$rfinal:}$next_icon%{A}%{F-}"
+next="%{F$COLOR_ICON}%{A:MF$rfinal $oldx:}$prev_icon%{A}%{F-}"
+rew="%{F$COLOR_ICON}%{A:MR:}$rew_icon%{A}%{F-}"
+v_up="%{F$COLOR_ICON}%{A:MU:}$v_up_icon%{A}%{F-}"
+v_down="%{F$COLOR_ICON}%{A:MD:}$v_down_icon%{A}%{F-}"

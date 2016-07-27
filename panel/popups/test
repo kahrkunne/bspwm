@@ -1,0 +1,7 @@
+#/usr/bin/bash
+echo "X200"
+echo "R500"
+echo "O%{c}kek"
+echo "O$(cat /home/kahr/ayy.txt)"
+echo "O$1"
+

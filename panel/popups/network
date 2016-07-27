@@ -1,0 +1,17 @@
+#!/usr/bin/bash
+. panel_colors
+x=50
+location=$(xdotool getmouselocation)
+r=$(echo $location | cut -d ':' -f2 | cut -d ' ' -f1)
+rtemp=$(($r - ($x/2)))
+input=$1
+if [[ ${input:0:1} == 'R' ]]; then
+        rfinal=${input#?}
+else
+        rfinal=$rtemp
+fi
+
+echo "Npopupnetwork"
+echo "X$x"
+echo "R$rfinal"
+echo "O%{c}R"

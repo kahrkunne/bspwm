@@ -1,0 +1,87 @@
+#!/usr/bin/bash
+PANEL_FIFO="/tmp/panel-fifo"
+while read -r line ; do
+    case $line in
+        MT*)
+            mpc toggle
+            if [[ $(echo ${line:2} | head -c 1) == 'p' ]]; then
+                pos=${line:3}
+                pids=$(pgrep -f popupmusic)
+                launchpopup music R$pos
+                sleep 1
+                echo $pids | sed s/' '/'\n'/g | while read i; do kill "$i"; done
+            fi
+            ;;
+        MP*)
+            mpc pause
+            ;;
+        MG*)
+            mpc play
+            ;;
+        MB*)
+            pos=${line:2}
+            mpc prev 
+            pids=$(pgrep -f popupmusic)
+            launchpopup music R$pos
+            sleep 1
+            echo $pids | sed s/' '/'\n'/g | while read i; do kill "$i"; done
+            ;;
+        MF*)
+            firstin=$(echo $line | cut -d ' ' -f 1)
+            secondin=$(echo $line | cut -d ' ' -f 2)
+            pos=${firstin:2}
+            oldx=$secondin
+            mpc next 
+            pids=$(pgrep -f popupmusic)
+            launchpopup music R$pos $oldx
+            sleep 0.2
+            echo $pids | sed s/' '/'\n'/g | while read i; do kill "$i"; done
+            ;;
+        MR*)
+            mpc seek 0
+            ;;
+        MU*)
+            mpc volume +10
+            ;;
+        MD*)
+            mpc volume -10
+            ;;
+        S*)
+            desktop=$(echo -n $line | tail -c 1)
+            bspc desktop -f $desktop
+            ;;
+        PM*)
+            input=${line:2}
+            if [ "$(cat /tmp/pmstate)" == "1" ]; then
+                echo 0 > /tmp/pmstate
+                pkill -f "popupmusic"
+            else
+                launchpopup music $input 
+                echo 1 > /tmp/pmstate
+            fi
+            ;;
+        PN*)
+            input=${line:2}
+            if [ "$(cat /tmp/pnstate)" == "1" ]; then
+                echo 0 > /tmp/pnstate
+                pkill -f "popupnetwork"
+            else
+                launchpopup network $input
+                echo 1 > /tmp/pnstate
+            fi
+            ;;
+        CN*)
+            echo 'CN' > $PANEL_FIFO
+            ;;
+        CM*)
+            echo 'CM' > $PANEL_FIFO
+            ;;
+        CT*)
+            echo 'CT' > $PANEL_FIFO
+            ;;
+        CB*)
+            echo 'CB' > $PANEL_FIFO
+            ;;
+    esac
+done
+

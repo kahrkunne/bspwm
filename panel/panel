@@ -1,0 +1,38 @@
+#!/usr/bin/bash
+touch /tmp/pmstate
+
+if [ $(pgrep -cx panel) -gt 1 ] ; then
+	printf "%s\n" "The panel is already running." >&2
+	exit 1
+fi
+
+trap 'trap - TERM; kill 0' INT TERM QUIT EXIT
+
+[ -e "$PANEL_FIFO" ] && rm "$PANEL_FIFO"
+mkfifo "$PANEL_FIFO"
+
+bspc control --subscribe > "$PANEL_FIFO" &
+xtitle -sf 'T%s' > "$PANEL_FIFO" &
+clock -sf 'S%a %D %R' > "$PANEL_FIFO" &
+while sleep 5; do echo "B" > $PANEL_FIFO; done &
+
+conky --config ~/.config/.conkyrc > "$PANEL_FIFO" &
+
+. panel_colors
+
+cat "$PANEL_FIFO" \
+        | panel_bar \
+	| lemonbar \
+		-g "x18+0+0"\
+		-a "20"\
+                -f "Terminus:pixelsize=14:style=ja"\
+                -f "IPAGothic"\
+                -f "fontawesome:size=10:antialias=True"\
+                -f "icomoon:size=10:antialias=True"\
+                -o -1\
+		-u 1\
+		-B "${COLOR_BACKGROUND}"\
+		-F "${COLOR_FOREGROUND}" \
+	| clickable &
+
+wait

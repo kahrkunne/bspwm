@@ -1,0 +1,154 @@
+#!/usr/bin/bash
+# TODO: This entire thing is nasty. Ideally I'd rewrite it, preferably in python or something
+. panel_colors
+
+PANEL_FIFO="/tmp/panel-fifo"
+net_icon="%{A3:PN:}%{F$COLOR_ICON}\ue600%{F-}%{A}"
+net_icon_down="%{A3:PN:}%{F$COLOR_FREE_FG}\ue600%{F-}%{A}"
+clock_icon="%{A2:CT:}%{F$COLOR_ICON}\uf017%{F-}%{A}"
+num_mon=$(bspc query -M | wc -l)
+run_meme=$'\uf054'
+run_icon="%{A:L:}%{F$COLOR_ICON}\uf054%{F-}%{A}"
+updatebat(){
+    bat_status=$(acpi | cut -d ' ' -f 4 | tr -d , | tr -d %)
+    if (( $bat_status < 5 )); then
+        bat_unicode="\uf244"
+    elif (( $bat_status < 25 )); then
+        bat_unicode="\uf243"
+    elif (( $bat_status < 50 )); then
+        bat_unicode="\uf242"
+    elif (( $bat_status < 75 )); then
+        bat_unicode="\uf241"
+    else
+        bat_unicode="\uf240"
+    fi
+    bat_icon="%{A2:CB:}%{F$COLOR_ICON}$bat_unicode%{F-}%{A}"
+    if [[ $bat_collapsed != "1" ]]; then
+        bat="$bat_icon %{F$COLOR_BLUE}$bat_status%%{F-}"
+    else
+        bat="$bat_icon"
+    fi
+}
+updatebat
+net_collapsed='1'
+mpd_collapsed='0'
+time_collapsed='0'
+bat_collapsed='0'
+
+toggle(){
+    if [[ $(eval "echo \$$1") != "1" ]]; then
+        eval $1='1'
+    else
+        eval $1='0'
+    fi
+}
+
+while read -r line ; do
+	case $line in
+	        C*)
+	                item=${line:1:1}
+	                case $item in
+                               N*)
+                                    toggle net_collapsed 
+                                   echo $(netinfo.sh) > $PANEL_FIFO
+                                   ;;
+                               M*)
+                                   toggle mpd_collapsed
+                                   echo "M$(getmpdstatus)" > $PANEL_FIFO
+                                   ;;
+                               T*)
+                                   toggle time_collapsed
+                                   echo "S$(date '+%a %D %R')" > $PANEL_FIFO
+                                   ;;
+                               B*)
+                                   toggle bat_collapsed
+                                   if [[ $bat_collapsed != "1" ]]; then
+                                       bat="$bat_icon %{F$COLOR_BLUE}$bat_status%%{F-}"
+                                   else
+                                       bat="$bat_icon"
+                                   fi
+                                   ;;
+                        esac
+                        ;;
+                B*)
+                        # battery output
+                        updatebat
+                        ;;
+		S*)
+			# clock output
+			if [[ $time_collapsed != "1" ]]; then
+			    sys_infos="$clock_icon%{F$COLOR_STATUS_FG}%{B$COLOR_STATUS_BG} ${line#?} %{B-}%{F-}"
+                        else
+                            sys_infos="$clock_icon "
+                        fi
+                        # update battery, it has to happen
+			;;
+		O*)
+                        if [[ $net_collapsed != "1" ]]; then
+                            net_infos="%{A2:CN:}$net_icon%{A} %{F$COLOR_GREEN}${line#?}%{B-}%{F-} "
+                        else 
+                            net_infos="%{A2:CN:}$net_icon%{A} "
+                        fi
+                        ;;
+                N*)
+                        if [[ $net_collapsed != "1" ]]; then
+                            net_infos="$net_icon %{F$COLOR_RED}${line#?}%{B-}%{F-} "
+                        else
+                            net_infos="%{A2:CN:}$net_icon_down%{A} "
+                        fi
+                        ;;
+		M*)
+			# mpd output
+			output=${line#?}
+			mpdicon="%{F$COLOR_ICON}%{A:MT:}%{A2:CM:}%{A3:PM:}${output:0:1}%{A}%{A}%{A}%{F-}"
+			if [[ $mpd_collapsed != "1" ]]; then
+			    mpd_info="$mpdicon%{F$COLOR_MPD_FG}%{B$COLOR_MPD_BG}${output#?}%{B-}%{F-}"
+                        else 
+                            mpd_info=$mpdicon
+                        fi
+			;;
+		W*)
+			# bspwm internal state
+			wm_infos=""
+			IFS=':'
+			set -- ${line#?}
+			while [ $# -gt 0 ] ; do
+				item=$1
+				name=${item#?}
+				case $item in
+					O*)
+						# focused occupied desktop
+						wm_infos="${wm_infos}%{F$COLOR_FOCUSED_OCCUPIED_FG}%{B$COLOR_FOCUSED_OCCUPIED_BG}%{U$COLOR_UNDERLINE}%{+u} $(tochink.sh $item) %{-u}%{B-}%{F-}"
+						;;
+					F*)
+						# focused free desktop
+						wm_infos="${wm_infos}%{F$COLOR_FOCUSED_FREE_FG}%{B$COLOR_FOCUSED_FREE_BG}%{U$COLOR_UNDERLINE}%{+u} $(tochink.sh $item) %{-u}%{B-}%{F-}"
+						;;
+					U*)
+						# focused urgent desktop
+						wm_infos="${wm_infos}%{F$COLOR_FOCUSED_URGENT_FG}%{B$COLOR_FOCUSED_URGENT_BG}%{U$COLOR_UNDERLINE}%{+u} $(tochink.sh $item) %{-u}%{B-}%{F-}"
+						;;
+					o*)
+						# inactive but occupied desktop
+						wm_infos="${wm_infos}%{F$COLOR_OCCUPIED_FG}%{B$COLOR_OCCUPIED_BG}%{A:S$item:} $(tochink.sh $item) %{A}%{B-}%{F-}"
+						;;
+					f*)
+						# free desktop
+						wm_infos="${wm_infos}%{F$COLOR_FREE_FG}%{B$COLOR_FREE_BG}%{A:S$item:} $(tochink.sh $item) %{A}%{B-}%{F-}"
+						;;
+					u*)
+						# urgent desktop
+						wm_infos="${wm_infos}%{F$COLOR_URGENT_FG}%{B$COLOR_URGENT_BG}%{A:S$item:} $(tochink.sh $item) %{A}%{B-}%{F-}"
+						;;
+					L*)
+						# layout
+						wm_infos="${wm_infos}%{F$COLOR_LAYOUT_FG}%{B$COLOR_LAYOUT_BG}%{B-}%{F-}"
+						;;
+				esac
+				shift
+			done
+			;;
+	esac
+	echo -e " ${run_icon}%{B$COLOR_BACKGROUND} %{c} ${wm_infos}%{B$COLOR_BACKGROUND} %{r} ${bat} ${net_infos}${mpd_info}%{B$COLOR_BACKGROUND} $sys_infos"
+done
+
